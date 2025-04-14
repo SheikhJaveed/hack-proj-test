@@ -1,160 +1,173 @@
-import React, { useState } from 'react';
-import { Send, MessageCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { Send, MessageCircle, Loader } from "lucide-react";
 
 function PredictMed() {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  // Auto-scroll to bottom when chat history updates
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatHistory]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
     const userMessage = {
-      type: 'user',
+      type: "user",
       text: input,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     setChatHistory([...chatHistory, userMessage]);
-    setInput('');
+    setInput("");
     setLoading(true);
 
     try {
-      console.log('Sending request to backend...');
-      const response = await fetch('http://localhost:5000/api/healthcare/healthcare_democratization', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ 
-          question: input 
-        })
-      });
+      console.log("Sending request to backend...");
+      const response = await fetch(
+        "http://localhost:5010/api/healthcare/answer",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            question: input,
+          }),
+        }
+      );
 
-      console.log('Response status:', response.status);
-      
+      console.log("Response status:", response.status);
+
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('API endpoint not found. Please check if the server is running and the endpoint is correct.');
+          throw new Error(
+            "API endpoint not found. Please check if the server is running and the endpoint is correct."
+          );
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Received data:', data);
+      console.log("Received data:", data);
 
       const botMessage = {
-        type: 'bot',
+        type: "bot",
         text: data.answer,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
-      setChatHistory(prev => [...prev, botMessage]);
+      setChatHistory((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error('Error details:', error);
+      console.error("Error details:", error);
       const errorMessage = {
-        type: 'bot',
-        text: `Error: ${error.message || 'Failed to connect to the server. Please ensure the backend is running on port 5000.'}`,
-        timestamp: new Date().toISOString()
+        type: "bot",
+        text: `Error: ${
+          error.message ||
+          "Failed to connect to the server. Please ensure the backend is running on port 5010."
+        }`,
+        timestamp: new Date().toISOString(),
       };
-      setChatHistory(prev => [...prev, errorMessage]);
+      setChatHistory((prev) => [...prev, errorMessage]);
+
+      console.log("Full error object:", error);
+      console.log("Was the server running on port 5010?");
     }
 
     setLoading(false);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="p-6 bg-blue-600">
-            <h2 className="text-2xl font-bold text-white">Medical Text Simplifier</h2>
-            <p className="text-blue-100 mt-2">
-              Enter medical text and I'll help explain the terms in simple language.
-            </p>
-          </div>
+  // Format timestamp to readable time
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
-          {/* Chat History */}
-          <div className="h-[500px] overflow-y-auto p-6">
-            <div className="space-y-6">
-              {chatHistory.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    message.type === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
+  return (
+    <div className="flex flex-col h-screen max-h-screen bg-gray-50 text-gray-800">
+      {/* Header */}
+      <div className="bg-white p-4 shadow-md">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+            <MessageCircle className="mr-2 text-blue-600" />
+            Medical Q&A Assistant
+          </h2>
+          <p className="text-blue-600 mt-2">
+            Ask medical questions and get expert explanations
+          </p>
+        </div>
+      </div>
+
+      {/* Chat Container - using flex-1 for proper height calculation without scrollbar */}
+      <div className="flex-1 overflow-hidden p-4 max-w-4xl mx-auto w-full">
+        <div className="h-full overflow-y-auto" style={{ paddingRight: "5px" }}>
+          {chatHistory.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <MessageCircle size={48} className="mb-4 text-blue-500 opacity-70" />
+              <p className="text-lg">Ask a medical question to get started</p>
+              <p className="text-sm mt-2">Example: "What is hypertension and how is it treated?"</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {chatHistory.map((msg, index) => (
+                <div 
+                  key={index} 
+                  className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  <div
-                    className={`max-w-lg rounded-lg p-4 ${
-                      message.type === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
+                  <div 
+                    className={`p-3 rounded-lg max-w-[80%] ${
+                      msg.type === "user" 
+                        ? "bg-blue-600 text-white" 
+                        : msg.text.startsWith("Error:") 
+                          ? "bg-red-600 text-white" 
+                          : "bg-gray-200 text-gray-800"
                     }`}
                   >
-                    <div className="flex items-start">
-                      <MessageCircle className="h-5 w-5 mr-2 mt-1" />
-                      <div>
-                        <p>{message.text}</p>
-                        {message.medicalTerms && message.medicalTerms.length > 0 && (
-                          <div className="mt-4 border-t pt-2">
-                            <h4 className="font-semibold mb-2">Medical Terms Explained:</h4>
-                            <ul className="list-disc pl-4 space-y-1">
-                              {message.medicalTerms.map((term, i) => (
-                                <li key={i}>
-                                  <span className="font-medium">{term.term}</span>: {term.explanation}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        <div className="text-xs mt-2 opacity-75">
-                          {new Date(message.timestamp).toLocaleTimeString()}
-                        </div>
-                      </div>
+                    <div className="whitespace-pre-wrap">{msg.text}</div>
+                    <div className={`text-xs mt-1 ${msg.type === "user" ? "text-blue-200" : "text-gray-500"}`}>
+                      {formatTime(msg.timestamp)}
                     </div>
                   </div>
                 </div>
               ))}
-              {loading && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-100 rounded-lg p-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div ref={messagesEndRef} />
             </div>
-          </div>
-
-          {/* Input Form */}
-          <div className="border-t border-gray-200 p-4">
-            <form onSubmit={handleSubmit} className="flex space-x-4">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Enter medical text to simplify..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Send className="h-5 w-5" />
-              </button>
-            </form>
-            <p className="text-xs text-gray-500 mt-2">
-              Enter medical text and get explanations for medical terms in simple language.
-            </p>
-          </div>
+          )}
         </div>
+      </div>
+
+      {/* Input Form */}
+      <div className="p-4 bg-white border-t border-gray-200">
+        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your medical question..."
+            className="flex-1 p-3 rounded-l-lg bg-gray-100 text-gray-800 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-r-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? (
+              <Loader className="animate-spin" size={20} />
+            ) : (
+              <Send size={20} />
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );

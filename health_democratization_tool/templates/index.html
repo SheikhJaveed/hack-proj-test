@@ -96,7 +96,8 @@
             document.getElementById('results').style.display = 'none';
 
             try {
-                const response = await fetch('/simplify', {
+                // Updated endpoint path to match backend route
+                const response = await fetch('/api/medical/simplify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -107,12 +108,16 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    document.getElementById('simplifiedText').textContent = data.simplified_text;
+                    // Update to match the response format from the backend
+                    document.getElementById('simplifiedText').textContent = data.answer || data.simplified_text;
                     
                     const explanationsDiv = document.getElementById('explanations');
                     explanationsDiv.innerHTML = '';
                     
-                    data.explanations.forEach(item => {
+                    // Handle both possible response formats
+                    const explanations = data.explanations || [];
+                    
+                    explanations.forEach(item => {
                         const div = document.createElement('div');
                         div.className = 'mb-3';
                         div.innerHTML = `
@@ -127,6 +132,7 @@
                     alert(data.error || 'An error occurred');
                 }
             } catch (error) {
+                console.error('Error:', error);
                 alert('An error occurred while processing your request');
             } finally {
                 document.querySelector('.loading').style.display = 'none';
@@ -134,4 +140,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

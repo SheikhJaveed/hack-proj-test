@@ -95,7 +95,7 @@
                 const loadingId = 'loading-' + Date.now();
                 addMessage('🔄 Thinking...', false);
 
-                fetch('http://localhost:5008/healthcare_democratization', {
+                fetch('http://localhost:5010/api/healthcare/answer', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

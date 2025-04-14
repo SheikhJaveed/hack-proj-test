@@ -26,14 +26,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-# Configure CORS to allow requests from the frontend
-CORS(app, resources={
-    r"/*": {
-        "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }
-})
+# Enable CORS for all routes and all origins 
+CORS(app, supports_credentials=True)
 
 def cleanup_cache():
     """Delete __pycache__ folder when the application exits"""
@@ -63,8 +57,17 @@ except Exception as e:
 def home():
     return render_template('index.html')
 
-@app.route('/healthcare_democratization', methods=['POST'])
-def healthcare_democratization():
+# Add a route to handle OPTIONS preflight requests explicitly
+@app.route('/api/healthcare/answer', methods=['OPTIONS'])
+def handle_options():
+    response = jsonify({'status': 'ok'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    return response
+
+@app.route('/api/healthcare/answer', methods=['POST'])
+def health_answer():
     try:
         if chain is None:
             return jsonify({
@@ -119,54 +122,6 @@ def healthcare_democratization():
             'sources': []
         }), 500
 
-@app.route('/simplify', methods=['POST'])
-def simplify_text():
-    try:
-        if medical_simplifier is None:
-            return jsonify({
-                'error': "Text simplification feature is not available. Please check server logs."
-            }), 500
-
-        if not request.is_json:
-            return jsonify({
-                'error': "Request must be JSON"
-            }), 400
-
-        data = request.get_json()
-        text = data.get('text', '')
-        
-        if not text.strip():
-            return jsonify({
-                'error': 'Please enter some text'
-            }), 400
-            
-        # Get medical terms and their explanations
-        medical_terms = medical_simplifier.identify_medical_terms(text)
-        simplified_text = text
-        
-        explanations = []
-        for term_info in medical_terms:
-            term = term_info['term']
-            simplified_def = medical_simplifier.generate_simplified_explanation(term, text)
-            explanations.append({
-                'term': term,
-                'explanation': simplified_def
-            })
-            pattern = r'\b' + re.escape(term) + r'\b'
-            simplified_text = re.sub(pattern, f"{term} ({simplified_def})", simplified_text)
-            
-        return jsonify({
-            'original_text': text,
-            'simplified_text': simplified_text,
-            'explanations': explanations
-        })
-        
-    except Exception as e:
-        logger.error('Error in text simplification: %s', str(e))
-        return jsonify({
-            'error': f"An error occurred: {str(e)}"
-        }), 500
-
 @app.route('/test', methods=['GET'])
 def test():
     return jsonify({
@@ -176,6 +131,6 @@ def test():
 
 if __name__ == '__main__':
     print("🏥 Starting Medical Chatbot Server...")
-    print("✨ Access the chatbot at http://localhost:5008")
+    print("✨ Access the chatbot at http://localhost:5010")
     # Run the server on all interfaces (0.0.0.0) to allow external connections
-    app.run(debug=True, host='0.0.0.0', port=5008)
+    app.run(debug=True, host='0.0.0.0', port=5010)

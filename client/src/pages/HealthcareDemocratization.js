@@ -16,7 +16,7 @@ function HealthcareDemocratization() {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/healthcare/health', {
+        const response = await fetch('http://localhost:5008/test', {
           headers: {
             'Accept': 'application/json',
           },
@@ -52,16 +52,16 @@ function HealthcareDemocratization() {
 
     setLoading(true);
     try {
-      console.log('Sending request to:', 'http://localhost:5000/api/healthcare/healthcare_democratization');
-      console.log('Request body:', { question: question.trim() });
+      console.log('Sending request to:', 'http://localhost:5008/api/medical/simplify');
+      console.log('Request body:', { text: question.trim() });
       
-      const response = await fetch('http://localhost:5000/api/healthcare/healthcare_democratization', {
+      const response = await fetch('http://localhost:5008/api/medical/simplify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ question: question.trim() }),
+        body: JSON.stringify({ text: question }),
       });
 
       console.log('Response status:', response.status);
@@ -78,7 +78,8 @@ function HealthcareDemocratization() {
       }
 
       setResponse(data);
-      setQuestion('');
+      // Don't clear the question field to allow for user to view what they asked
+      // setQuestion('');
     } catch (error) {
       console.error('Error details:', error);
       
@@ -106,7 +107,7 @@ function HealthcareDemocratization() {
             {serverStatus === 'offline' && (
               <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md">
                 <p className="font-medium">⚠️ Server is currently unavailable</p>
-                <p className="text-sm">Please make sure the backend server is running on port 5000.</p>
+                <p className="text-sm">Please make sure the backend server is running on port 5008.</p>
               </div>
             )}
           </div>
@@ -116,7 +117,7 @@ function HealthcareDemocratization() {
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Enter your healthcare question (e.g., What is angioplasty? What is diabetes?)"
+                placeholder="Enter medical text to simplify (e.g., Hypertension is a condition characterized by elevated blood pressure)"
                 className="w-full p-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
                 disabled={serverStatus === 'offline'}
               />
@@ -125,21 +126,29 @@ function HealthcareDemocratization() {
                 disabled={loading || serverStatus === 'offline'}
                 className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
               >
-                {loading ? 'Processing...' : 'Get Answer'}
+                {loading ? 'Processing...' : 'Simplify Text'}
               </button>
             </div>
           </form>
 
           {response && (
             <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-              <h2 className="text-xl font-semibold mb-4">Answer</h2>
+              <h2 className="text-xl font-semibold mb-4">Simplified Text</h2>
               <div className="prose max-w-none">
                 {response.answer}
               </div>
               
-              {response.disclaimer && (
-                <div className="mt-6 border-t pt-4 text-sm text-gray-600">
-                  <p>{response.disclaimer}</p>
+              {response.explanations && response.explanations.length > 0 && (
+                <div className="mt-6 border-t pt-4">
+                  <h3 className="text-lg font-semibold mb-3">Medical Terms Explained</h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    {response.explanations.map((item, index) => (
+                      <div key={index} className="p-3 bg-white rounded-md shadow-sm">
+                        <strong className="text-blue-700">{item.term}:</strong>
+                        <p className="mt-1">{item.explanation}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

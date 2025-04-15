@@ -7,7 +7,7 @@
 .env.production
 *.env
 **/.env
-/predictimed/.env
+
 
 # Logs
 logs

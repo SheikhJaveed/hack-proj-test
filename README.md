@@ -1,6 +1,6 @@
 # 🏥 One Health Hub
 
-One Health Hub is a full-stack healthcare web application built during the advaya hackathon at BGSCET College, Bengaluru. It aims to improve healthcare accessibility, empower individuals to manage their health, and promote health democratization through smart technology.
+One Health Hub is a full-stack healthcare web application built during the **Advaya hackathon 2025** at BGSCET College, Bengaluru. It aims to improve healthcare accessibility, empower individuals to manage their health, and promote health democratization through smart technology.
 
 ## 🌟 Features
 
@@ -35,4 +35,3 @@ One Health Hub is a full-stack healthcare web application built during the advay
 
 ```bash
 git clone https://github.com/SheikhJaveed/One-Health-Hub.git
-cd One-Health-Hub
